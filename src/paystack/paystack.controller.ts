@@ -2,6 +2,9 @@ import { Controller, Post, Body, Headers, HttpException, HttpStatus, Req } from 
 import { PaystackService } from './paystack.service';
 import { WalletService } from '../wallet/wallet.service';
 
+/**
+ * Controller for handling Paystack-related operations.
+ */
 @Controller('wallet/paystack')
 export class PaystackController {
     constructor(
@@ -9,6 +12,14 @@ export class PaystackController {
         private readonly walletService: WalletService,
     ) { }
 
+    /**
+     * Webhook endpoint for Paystack events.
+     * Verifies the signature and processes successful charge events to credit wallets.
+     * @route POST /wallet/paystack/webhook
+     * @param {string} signature - The x-paystack-signature header.
+     * @param {Object} body - The webhook payload.
+     * @returns {Object} JSON object with status true.
+     */
     @Post('webhook')
     async handleWebhook(
         @Headers('x-paystack-signature') signature: string,
