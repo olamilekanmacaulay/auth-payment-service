@@ -26,6 +26,12 @@ import { RawBodyMiddleware } from './common/middleware/raw-body.middleware';
         database: configService.get<string>('DB_DATABASE'),
         entities: [User, Wallet, Transaction, ApiKey],
         synchronize: true, // Disable in production
+        ssl: true,
+        extra: {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        },
       }),
       inject: [ConfigService],
     }),
