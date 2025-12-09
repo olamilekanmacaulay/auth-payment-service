@@ -25,13 +25,13 @@ import { RawBodyMiddleware } from './common/middleware/raw-body.middleware';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
         entities: [User, Wallet, Transaction, ApiKey],
-        synchronize: true, // Disable in production
-        ssl: true,
-        extra: {
+        synchronize: true,
+        ssl: configService.get('NODE_ENV') === 'production',
+        extra: configService.get('NODE_ENV') === 'production' ? {
           ssl: {
             rejectUnauthorized: false,
           },
-        },
+        } : undefined,
       }),
       inject: [ConfigService],
     }),
