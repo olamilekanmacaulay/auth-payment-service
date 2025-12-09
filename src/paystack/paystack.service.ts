@@ -11,11 +11,17 @@ export class PaystackService {
         this.secretKey = this.configService.get<string>('PAYSTACK_SECRET_KEY')!;
     }
 
-    async initializeTransaction(email: string, amount: number) {
+    async initializeTransaction(email: string, amount: number, userId: string) {
         try {
             const response = await axios.post(
                 'https://api.paystack.co/transaction/initialize',
-                { email, amount: amount * 100 }, // Amount in kobo
+                {
+                    email,
+                    amount: amount * 100,
+                    metadata: {
+                        userId,
+                    },
+                },
                 {
                     headers: {
                         Authorization: `Bearer ${this.secretKey}`,

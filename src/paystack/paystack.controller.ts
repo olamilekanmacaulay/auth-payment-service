@@ -18,21 +18,7 @@ export class PaystackController {
         // Use rawBody if available, otherwise fallback (though rawBody is preferred)
         const payload = req.rawBody || JSON.stringify(body);
 
-        console.log('--- Debug Webhook ---');
-        console.log('Header Signature:', signature);
-        console.log('RawBody Type:', typeof req.rawBody);
-        console.log('Payload used for hash:', payload.toString());
-
-        const isValid = this.paystackService.verifySignature(signature, payload);
-        
-        // DEBUG: Calculate hash here to show in logs
-        const crypto = require('crypto');
-        const secret = process.env.PAYSTACK_SECRET_KEY;
-        const calculatedHash = crypto.createHmac('sha512', secret).update(payload).digest('hex');
-        console.log('Calculated Hash:', calculatedHash);
-        console.log('Is Valid:', isValid);
-
-        if (!isValid) {
+        if (!this.paystackService.verifySignature(signature, payload)) {
             throw new HttpException('Invalid signature', HttpStatus.BAD_REQUEST);
         }
 

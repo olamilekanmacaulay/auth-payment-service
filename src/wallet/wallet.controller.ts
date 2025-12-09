@@ -4,12 +4,6 @@ import { JwtOrApiKeyGuard } from '../auth/jwt-or-api-key.guard';
 import { PaystackService } from '../paystack/paystack.service';
 
 @Controller('wallet')
-// We need a custom guard to allow EITHER JWT OR API Key
-// For simplicity, let's apply them on specific routes or create a composite guard
-// But NestJS guards run in order. If one returns true, does it stop? No, all must return true if global?
-// If we use @UseGuards(Guard1, Guard2), both must pass? No.
-// We need a strategy that tries one, then the other.
-// Or we can make a custom guard that checks both.
 @UseGuards(JwtOrApiKeyGuard)
 export class WalletController {
     constructor(
@@ -31,7 +25,7 @@ export class WalletController {
             throw new UnauthorizedException('Missing deposit permission');
         }
         const user = req.user;
-        const result = await this.paystackService.initializeTransaction(user.email, body.amount);
+        const result = await this.paystackService.initializeTransaction(user.email, body.amount, user.userId || user.id);
         return result;
     }
 
