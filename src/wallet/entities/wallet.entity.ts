@@ -9,6 +9,9 @@ export class Wallet {
     @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
     balance: number;
 
+    @Column({ unique: true, nullable: true })
+    walletNumber: string;
+
     @Column({ default: 'NGN' })
     currency: string;
 

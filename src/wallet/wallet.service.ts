@@ -13,10 +13,12 @@ export class WalletService {
     ) { }
 
     async create(user: User): Promise<Wallet> {
+        const walletNumber = Math.floor(100000000 + Math.random() * 900000000).toString(); // 9 digits
         const wallet = this.walletRepository.create({
             user,
             balance: 0,
             currency: 'NGN',
+            walletNumber,
         });
         return this.walletRepository.save(wallet);
     }
@@ -28,6 +30,13 @@ export class WalletService {
         if (!wallet) {
             throw new NotFoundException('Wallet not found');
         }
+
+        // Lazy generation of wallet number for existing wallets
+        if (!wallet.walletNumber) {
+            wallet.walletNumber = Math.floor(100000000 + Math.random() * 900000000).toString();
+            await this.walletRepository.save(wallet);
+        }
+
         return wallet;
     }
 
@@ -68,7 +77,7 @@ export class WalletService {
         await this.walletRepository.manager.save(transaction);
     }
 
-    async transfer(fromUserId: string, toWalletId: string, amount: number): Promise<void> {
+    async transfer(fromUserId: string, toWalletNumber: string, amount: number): Promise<void> {
         const queryRunner = this.walletRepository.manager.connection.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -88,7 +97,7 @@ export class WalletService {
             }
 
             const toWallet = await queryRunner.manager.findOne(Wallet, {
-                where: { id: toWalletId },
+                where: { walletNumber: toWalletNumber },
                 lock: { mode: 'pessimistic_write' },
             });
 
@@ -136,9 +145,6 @@ export class WalletService {
     }
 
     async getTransactions(userId: string): Promise<Transaction[]> {
-        // This requires injecting TransactionRepository or using QueryBuilder
-        // For now, let's assume we can access it via manager or inject it
-        // To keep it simple without changing constructor too much, let's use manager
         return this.walletRepository.manager.find(Transaction, {
             where: { wallet: { user: { id: userId } } },
             order: { createdAt: 'DESC' },
