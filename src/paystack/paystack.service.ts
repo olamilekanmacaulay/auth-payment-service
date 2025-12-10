@@ -17,7 +17,7 @@ export class PaystackService {
                 'https://api.paystack.co/transaction/initialize',
                 {
                     email,
-                    amount: amount,
+                    amount: amount * 100,
                     metadata: {
                         userId,
                     },
