@@ -1,10 +1,12 @@
 import { Controller, Post, Body, Headers, HttpException, HttpStatus, Req } from '@nestjs/common';
 import { PaystackService } from './paystack.service';
 import { WalletService } from '../wallet/wallet.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiHeader, ApiBody } from '@nestjs/swagger';
 
 /**
  * Controller for handling Paystack-related operations.
  */
+@ApiTags('Paystack')
 @Controller('wallet/paystack')
 export class PaystackController {
     constructor(
@@ -15,11 +17,11 @@ export class PaystackController {
     /**
      * Webhook endpoint for Paystack events.
      * Verifies the signature and processes successful charge events to credit wallets.
-     * @route POST /wallet/paystack/webhook
-     * @param {string} signature - The x-paystack-signature header.
-     * @param {Object} body - The webhook payload.
-     * @returns {Object} JSON object with status true.
      */
+    @ApiOperation({ summary: 'Paystack Webhook', description: 'Receives and processes Paystack events.' })
+    @ApiHeader({ name: 'x-paystack-signature', description: 'HMAC SHA512 signature' })
+    @ApiBody({ schema: { type: 'object' }, description: 'Paystack event payload' })
+    @ApiResponse({ status: 201, description: 'Webhook processed successfully.' })
     @Post('webhook')
     async handleWebhook(
         @Headers('x-paystack-signature') signature: string,

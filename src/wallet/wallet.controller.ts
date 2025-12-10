@@ -2,11 +2,16 @@ import { Controller, Get, Post, Body, UseGuards, Req, UnauthorizedException, Par
 import { WalletService } from './wallet.service';
 import { JwtOrApiKeyGuard } from '../auth/jwt-or-api-key.guard';
 import { PaystackService } from '../paystack/paystack.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
+import { DepositDto } from './dto/deposit.dto';
+import { TransferDto } from './dto/transfer.dto';
 
 /**
  * Controller for handling wallet operations.
  * Supports both JWT and API Key authentication.
  */
+@ApiTags('Wallet')
+@ApiBearerAuth()
 @Controller('wallet')
 @UseGuards(JwtOrApiKeyGuard)
 export class WalletController {
@@ -18,9 +23,10 @@ export class WalletController {
     /**
      * Retrieves the balance of the authenticated user's wallet.
      * Requires 'read' permission if using API Key.
-     * @route GET /wallet/balance
-     * @returns {Object} JSON object containing the wallet details and balance.
      */
+    @ApiOperation({ summary: 'Get wallet balance', description: 'Retrieves the balance and details of the user\'s wallet.' })
+    @ApiResponse({ status: 200, description: 'Wallet details retrieved successfully.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized or missing permissions.' })
     @Get('balance')
     async getBalance(@Req() req) {
         if (req.isApiKey && !req.permissions.includes('read')) {
@@ -32,13 +38,13 @@ export class WalletController {
     /**
      * Initiates a deposit transaction via Paystack.
      * Requires 'deposit' permission if using API Key.
-     * @route POST /wallet/deposit
-     * @param {Object} body - Request body containing the amount.
-     * @param {number} body.amount - The amount to deposit (in NGN).
-     * @returns {Object} JSON object containing the Paystack authorization URL and reference.
      */
+    @ApiOperation({ summary: 'Initialize deposit', description: 'Generates a Paystack payment link for funding the wallet.' })
+    @ApiBody({ type: DepositDto })
+    @ApiResponse({ status: 201, description: 'Transaction initialized successfully.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized or missing permissions.' })
     @Post('deposit')
-    async deposit(@Req() req, @Body() body: { amount: number }) {
+    async deposit(@Req() req, @Body() body: DepositDto) {
         if (req.isApiKey && !req.permissions.includes('deposit')) {
             throw new UnauthorizedException('Missing deposit permission');
         }
@@ -50,15 +56,14 @@ export class WalletController {
     /**
      * Transfers funds from the authenticated user's wallet to another wallet.
      * Requires 'transfer' permission if using API Key.
-     * @route POST /wallet/transfer
-     * @param {Object} body - Request body containing recipient wallet number and amount.
-     * @param {string} body.wallet_number - The 9-digit wallet number of the recipient.
-     * @param {number} body.amount - The amount to transfer.
-     * @returns {Object} JSON object confirming the transfer.
      */
+    @ApiOperation({ summary: 'Transfer funds', description: 'Transfers money to another user via their wallet number.' })
+    @ApiBody({ type: TransferDto })
+    @ApiResponse({ status: 201, description: 'Transfer completed successfully.' })
+    @ApiResponse({ status: 400, description: 'Insufficient balance or invalid recipient.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized or missing permissions.' })
     @Post('transfer')
-    async transfer(@Req() req, @Body() body: { wallet_number: string; amount: number }) {
-        // Assuming wallet_number is the wallet ID for simplicity, or we can look it up
+    async transfer(@Req() req, @Body() body: TransferDto) {
         // Check permissions if API Key
         if (req.isApiKey && !req.permissions.includes('transfer')) {
             throw new UnauthorizedException('Missing transfer permission');
@@ -70,9 +75,10 @@ export class WalletController {
     /**
      * Retrieves the transaction history of the authenticated user's wallet.
      * Requires 'read' permission if using API Key.
-     * @route GET /wallet/transactions
-     * @returns {Array} List of transaction objects.
      */
+    @ApiOperation({ summary: 'Get transaction history', description: 'Retrieves a list of all transactions for the wallet.' })
+    @ApiResponse({ status: 200, description: 'Transaction history retrieved successfully.' })
+    @ApiResponse({ status: 401, description: 'Unauthorized or missing permissions.' })
     @Get('transactions')
     async getTransactions(@Req() req) {
         if (req.isApiKey && !req.permissions.includes('read')) {
@@ -84,10 +90,11 @@ export class WalletController {
     /**
      * Checks the status of a specific deposit transaction.
      * Requires 'read' permission if using API Key.
-     * @route GET /wallet/deposit/:reference/status
-     * @param {string} reference - The transaction reference.
-     * @returns {Object} JSON object containing the transaction status and amount.
      */
+    @ApiOperation({ summary: 'Get deposit status', description: 'Checks the status of a specific deposit by reference.' })
+    @ApiParam({ name: 'reference', description: 'The transaction reference' })
+    @ApiResponse({ status: 200, description: 'Transaction status retrieved successfully.' })
+    @ApiResponse({ status: 404, description: 'Transaction not found.' })
     @Get('deposit/:reference/status')
     async getDepositStatus(@Req() req, @Param('reference') reference: string) {
         if (req.isApiKey && !req.permissions.includes('read')) {

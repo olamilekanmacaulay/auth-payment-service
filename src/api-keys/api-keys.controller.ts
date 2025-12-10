@@ -1,11 +1,16 @@
 import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiKeysService } from './api-keys.service';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CreateApiKeyDto } from './dto/create-api-key.dto';
+import { RolloverApiKeyDto } from './dto/rollover-api-key.dto';
 
 /**
  * Controller for managing API Keys.
  * Requires JWT authentication.
  */
+@ApiTags('API Keys')
+@ApiBearerAuth()
 @Controller('keys')
 @UseGuards(AuthGuard('jwt'))
 export class ApiKeysController {
@@ -13,29 +18,26 @@ export class ApiKeysController {
 
     /**
      * Creates a new API Key for the authenticated user.
-     * @route POST /keys/create
-     * @param {Object} body - Request body.
-     * @param {string} body.name - Name/Label for the API Key.
-     * @param {string[]} body.permissions - List of permissions (e.g., ['read', 'deposit']).
-     * @param {string} body.expiry - Expiry duration (e.g., '1D', '1M').
-     * @returns {Object} JSON object containing the new API Key and its expiry date.
      */
+    @ApiOperation({ summary: 'Create API Key', description: 'Generates a new API Key with specified permissions.' })
+    @ApiBody({ type: CreateApiKeyDto })
+    @ApiResponse({ status: 201, description: 'API Key created successfully.' })
+    @ApiResponse({ status: 400, description: 'Invalid input or limit reached.' })
     @Post('create')
-    async create(@Req() req, @Body() body: { name: string; permissions: string[]; expiry: string }) {
+    async create(@Req() req, @Body() body: CreateApiKeyDto) {
         return this.apiKeysService.create(req.user, body.name, body.permissions, body.expiry);
     }
 
     /**
      * Rollover (regenerate) an expired API Key.
      * Creates a new key with the same permissions as the expired one.
-     * @route POST /keys/rollover
-     * @param {Object} body - Request body.
-     * @param {string} body.expired_key - The expired API Key string.
-     * @param {string} body.expiry - New expiry duration (e.g., '1D', '1M').
-     * @returns {Object} JSON object containing the new API Key and its expiry date.
      */
+    @ApiOperation({ summary: 'Rollover API Key', description: 'Replaces an expired API Key with a new one, retaining permissions.' })
+    @ApiBody({ type: RolloverApiKeyDto })
+    @ApiResponse({ status: 201, description: 'API Key rolled over successfully.' })
+    @ApiResponse({ status: 400, description: 'Key not expired or invalid.' })
     @Post('rollover')
-    async rollover(@Req() req, @Body() body: { expired_key: string; expiry: string }) {
+    async rollover(@Req() req, @Body() body: RolloverApiKeyDto) {
         return this.apiKeysService.rollover(req.user, body.expired_key, body.expiry);
     }
 }
