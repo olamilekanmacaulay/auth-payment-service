@@ -38,7 +38,7 @@ export class PaystackController {
         const { event, data } = body;
 
         if (event === 'charge.success') {
-            await this.walletService.creditWallet(data.reference, data.amount / 100, data.metadata?.userId); // Amount comes in kobo
+            await this.walletService.creditWallet(data.reference, data.amount, data.metadata?.userId); // Amount comes in kobo
         }
 
         return { status: true };
