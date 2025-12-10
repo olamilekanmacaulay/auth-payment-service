@@ -37,9 +37,7 @@ export class WalletService {
             await this.walletRepository.save(wallet);
         }
 
-        // Convert balance to Naira for display
-        const walletResponse = { ...wallet, balance: Number(wallet.balance) / 100 };
-        return walletResponse as any;
+        return wallet;
     }
 
     async findOneByUserId(userId: string): Promise<Wallet | null> {
@@ -80,7 +78,6 @@ export class WalletService {
     }
 
     async transfer(fromUserId: string, toWalletNumber: string, amount: number): Promise<void> {
-        const amountInKobo = amount * 100;
         const queryRunner = this.walletRepository.manager.connection.createQueryRunner();
         await queryRunner.connect();
         await queryRunner.startTransaction();
@@ -95,7 +92,7 @@ export class WalletService {
                 throw new HttpException('Sender wallet not found', HttpStatus.NOT_FOUND);
             }
 
-            if (Number(fromWallet.balance) < amountInKobo) {
+            if (Number(fromWallet.balance) < amount) {
                 throw new HttpException('Insufficient balance', HttpStatus.BAD_REQUEST);
             }
 
@@ -109,17 +106,17 @@ export class WalletService {
             }
 
             // Deduct from sender
-            fromWallet.balance = Number(fromWallet.balance) - Number(amountInKobo);
+            fromWallet.balance = Number(fromWallet.balance) - Number(amount);
             await queryRunner.manager.save(fromWallet);
 
             // Credit recipient
-            toWallet.balance = Number(toWallet.balance) + Number(amountInKobo);
+            toWallet.balance = Number(toWallet.balance) + Number(amount);
             await queryRunner.manager.save(toWallet);
 
             // Create Transaction Records (Sender - Debit)
             const debitTx = queryRunner.manager.create(Transaction, {
                 wallet: fromWallet,
-                amount: -amountInKobo, // Negative for debit
+                amount: -amount, // Negative for debit
                 type: TransactionType.TRANSFER,
                 status: TransactionStatus.SUCCESS,
                 description: `Transfer to wallet ${toWallet.id}`,
@@ -130,7 +127,7 @@ export class WalletService {
             // Create Transaction Records (Recipient - Credit)
             const creditTx = queryRunner.manager.create(Transaction, {
                 wallet: toWallet,
-                amount: amountInKobo,
+                amount: amount,
                 type: TransactionType.TRANSFER,
                 status: TransactionStatus.SUCCESS,
                 description: `Transfer from wallet ${fromWallet.id}`,
