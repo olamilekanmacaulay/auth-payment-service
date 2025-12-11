@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { Wallet } from './entities/wallet.entity';
 import { User } from '../users/entities/user.entity';
 import { Transaction, TransactionType, TransactionStatus } from './entities/transaction.entity';
+import { WalletBalanceDto } from './dto/wallet-balance.dto';
+
+const KOBO_PER_NAIRA = 100;
 
 @Injectable()
 export class WalletService {
@@ -31,7 +34,7 @@ export class WalletService {
         return this.walletRepository.save(wallet);
     }
 
-    async getBalance(userId: string): Promise<Wallet> {
+    async getBalance(userId: string): Promise<WalletBalanceDto> {
         const wallet = await this.walletRepository.findOne({
             where: { user: { id: userId } },
         });
@@ -50,7 +53,7 @@ export class WalletService {
             walletNumber: wallet.walletNumber,
             balance: this.koboToNaira(Number(wallet.balance)), // Convert to naira for response
             currency: wallet.currency,
-        };
+        } as WalletBalanceDto;
     }
 
     async findOneByUserId(userId: string): Promise<Wallet | null> {
