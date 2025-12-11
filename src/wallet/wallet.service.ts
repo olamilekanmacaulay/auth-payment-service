@@ -12,6 +12,14 @@ export class WalletService {
         private walletRepository: Repository<Wallet>,
     ) { }
 
+     /**
+     * Convert kobo to naira for display
+     */
+    private koboToNaira(kobo: number): number {
+        return kobo / KOBO_PER_NAIRA;
+    }
+
+
     async create(user: User): Promise<Wallet> {
         const walletNumber = Math.floor(100000000 + Math.random() * 900000000).toString(); // 9 digits
         const wallet = this.walletRepository.create({
@@ -37,7 +45,12 @@ export class WalletService {
             await this.walletRepository.save(wallet);
         }
 
-        return wallet;
+        return {
+            id: wallet.id,
+            walletNumber: wallet.walletNumber,
+            balance: this.koboToNaira(Number(wallet.balance)), // Convert to naira for response
+            currency: wallet.currency,
+        };
     }
 
     async findOneByUserId(userId: string): Promise<Wallet | null> {
